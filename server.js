@@ -37,10 +37,11 @@ app.get('/', (request, response) => {
 
 // specify what routes our server should be listening for
 app.get('/weather', (request, response) => {
-  //when we get that request, we send  back the following results;
+  //when we get that request, we send  back the following results
   let lat = request.query.lat;
   let lon = request.query.lon;
   let searchQuery = request.query.searchQuery;
+  let weatherSelection = request.query.weatherSelection; 
   response.send(weatherData);
 });
 
