@@ -25,6 +25,13 @@ require('dotenv').config();
 
 const PORT = process.env.PORT;
 
+//How to create a Class
+function Forecast (day) {
+  this.date = day.datetime;
+  this.description = day.weather.description;
+}  
+
+
 // BRING IN NEW DATA (i.e., WEATHER DATA)
 let weatherData = require('./data/weather.json')
 
@@ -32,24 +39,19 @@ let weatherData = require('./data/weather.json')
 // specify what routes our server should be listening for
 app.get('/', (request, response) => {
   //when we get that request, we send  back the following results;
-  response.send('Hello, from the server!');
+  response.send('Hello, from the server this is Port 3001!');
 });
 
 // specify what routes our server should be listening for
 app.get('/weather', (request, response) => {
   //when we get that request, we send  back the following results
-  let lat = request.query.lat;
-  let lon = request.query.lon;
-  let searchQuery = request.query.searchQuery;
-  let weatherSelection = request.query.weatherSelection; 
-  response.send(weatherData);
-});
+  let cityName = request.query.cityName
+  // response.send(weatherData);
+  //NEED TO FILTER THE DATA BASED ON IT MATCHING CITY NAME
+  let filteredWeatherData = weatherData.filter(city => city.city_name === cityName);
+  let userWeatherChoice = filteredWeatherData[0].data.map(forecast => new Forecast(forecast));
+  response.send(userWeatherChoice);
 
-//query parameters allow us to send extra information to the backend
-//we access query parameters using request.query
-app.get('/sayHello', (request, response) => {
-  let name = request.query.name
-  response.send(`Hello, ${name}`);
 });
 
 //if i am going to catch all other requests.  that catch all MUST be the LAST ROUTE
