@@ -1,64 +1,54 @@
-// SET UP STEPS 1-5 (WHAT IS NEEDED TO SET UP AN EXPRESS SERVER)
-// STEP 1
 'use strict';
 
-console.log('Hello World');
-
-//STEP 2
-// in our servers, we must use 'require' instead of 'import'.  
-// require is the precursor to import. 
 const express = require('express');
-
-//STEP 3
-//Below is how it's done per the documentation
 const app = express();
 
-//STEP 4
-//this allows frontend to access data from the backend. 
 const cors = require('cors');
 app.use(cors());
 
-//STEP 5  
-// use a dotenv to access our .env file -- must be done BEFORE defining PORT
-//Creating a port for ENV file
 require('dotenv').config();
 
+const axios = require('axios');
 const PORT = process.env.PORT;
 
-// BRING IN NEW DATA (i.e., WEATHER DATA)
-let weatherData = require('./data/weather.json')
 
-//>>>>>>>>>>>>>>>>>>>>ROUTING >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-// specify what routes our server should be listening for
+class Forecast {
+  constructor(day) {
+    this.description = `Low of ${day.low_temp}, high of ${day.high_temp} with ${day.weather.description.toLowerCase()}`;
+    this.date = day.datetime;
+  }
+}
+
+// Not using Weather JSON file anymore //
+// const weatherData = require('./data/weather.json');
+
 app.get('/', (request, response) => {
-  //when we get that request, we send  back the following results;
   response.send('Hello, from the server!');
 });
 
-// specify what routes our server should be listening for
-app.get('/weather', (request, response) => {
-  //when we get that request, we send  back the following results
+app.get('/weather', async (request, response) => {
   let lat = request.query.lat;
   let lon = request.query.lon;
-  let searchQuery = request.query.searchQuery;
-  let weatherSelection = request.query.weatherSelection; 
-  response.send(weatherData);
+  let cityFound = await axios.get(`https://api.weatherbit.io/v2.0/forecast/daily?key=${process.env.WEATHER_API_KEY}&lat=${lat}&lon=${lon}`);
+
+// console.log("This is", cityFound.data);
+ 
+response.send(cityFound.data.data.map(day => new Forecast(day)));
+
+
+//   let forecastArray = [];
+
+//   if (cityFound.data) {
+
+    // cityFound.data.data.forEach(obj => forecastArray.push(new Forecast(, )));
+//     response.send(forecastArray);
+//   } else {
+//     response.status(400).send('No weather data exists for this city');
+//   }
 });
 
-//query parameters allow us to send extra information to the backend
-//we access query parameters using request.query
-app.get('/sayHello', (request, response) => {
-  let name = request.query.name
-  response.send(`Hello, ${name}`);
-});
-
-//if i am going to catch all other requests.  that catch all MUST be the LAST ROUTE
 app.get('/*', (request, response) => {
-  response.status(404).send('Oh No!  Something went wrong');
+  response.status(404).send('Path does not exists');
 });
 
-
-
-//LISTENING FOR ROUTES >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-// tell our server to start listening for requests
-app.listen(PORT, () => console.log(`listening on port ${PORT}`))
+app.listen(PORT, () => console.log(`listening on port ${PORT}`));
