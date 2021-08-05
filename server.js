@@ -13,33 +13,38 @@ const PORT = process.env.PORT;
 
 
 class Forecast {
-  constructor(description, date) {
-    this.description = description;
-    this.date = date;
+  constructor(day) {
+    this.description = `Low of ${day.low_temp}, high of ${day.high_temp} with ${day.weather.description.toLowerCase()}`;
+    this.date = day.datetime;
   }
 }
-const weatherData = require('./data/weather.json');
+
+// Not using Weather JSON file anymore //
+// const weatherData = require('./data/weather.json');
 
 app.get('/', (request, response) => {
   response.send('Hello, from the server!');
 });
 
-app.get('/weather', (request, response) => {
-  let cityNameRequested = request.query.searchQuery;
+app.get('/weather', async (request, response) => {
+  let lat = request.query.lat;
+  let lon = request.query.lon;
+  let cityFound = await axios.get(`https://api.weatherbit.io/v2.0/forecast/daily?key=${process.env.WEATHER_API_KEY}&lat=${lat}&lon=${lon}`);
 
-  let latRequested = request.query.lat;
-  let lonRequested = request.query.lon;
+// console.log("This is", cityFound.data);
+ 
+response.send(cityFound.data.data.map(day => new Forecast(day)));
 
-  let cityFound = weatherData.find(obj => obj.city_name.toLowerCase() === cityNameRequested.toLowerCase());
-  let forecastArray = [];
 
-  if (cityFound) {
-    cityFound.data.forEach(obj => forecastArray.push(new Forecast(`Low of ${obj.low_temp}, high of ${obj.high_temp} with ${obj.weather.description.toLowerCase()}`, obj.datetime)));
+//   let forecastArray = [];
 
-    response.send(forecastArray);
-  } else {
-    response.status(400).send('No weather data exists for this city');
-  }
+//   if (cityFound.data) {
+
+    // cityFound.data.data.forEach(obj => forecastArray.push(new Forecast(, )));
+//     response.send(forecastArray);
+//   } else {
+//     response.status(400).send('No weather data exists for this city');
+//   }
 });
 
 app.get('/*', (request, response) => {
