@@ -1,66 +1,49 @@
-// SET UP STEPS 1-5 (WHAT IS NEEDED TO SET UP AN EXPRESS SERVER)
-// STEP 1
 'use strict';
 
-console.log('Hello World');
-
-//STEP 2
-// in our servers, we must use 'require' instead of 'import'.  
-// require is the precursor to import. 
 const express = require('express');
-
-//STEP 3
-//Below is how it's done per the documentation
 const app = express();
 
-//STEP 4
-//this allows frontend to access data from the backend. 
 const cors = require('cors');
 app.use(cors());
 
-//STEP 5  
-// use a dotenv to access our .env file -- must be done BEFORE defining PORT
-//Creating a port for ENV file
 require('dotenv').config();
 
+const axios = require('axios');
 const PORT = process.env.PORT;
 
-//How to create a Class
-function Forecast (day) {
-  this.date = day.datetime;
-  this.description = day.weather.description;
-}  
 
+class Forecast {
+  constructor(description, date) {
+    this.description = description;
+    this.date = date;
+  }
+}
+const weatherData = require('./data/weather.json');
 
-// BRING IN NEW DATA (i.e., WEATHER DATA)
-let weatherData = require('./data/weather.json')
-
-//>>>>>>>>>>>>>>>>>>>>ROUTING >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-// specify what routes our server should be listening for
 app.get('/', (request, response) => {
-  //when we get that request, we send  back the following results;
-  response.send('Hello, from the server this is Port 3001!');
+  response.send('Hello, from the server!');
 });
 
-// specify what routes our server should be listening for
 app.get('/weather', (request, response) => {
-  //when we get that request, we send  back the following results
-  let cityName = request.query.cityName
-  // response.send(weatherData);
-  //NEED TO FILTER THE DATA BASED ON IT MATCHING CITY NAME
-  let filteredWeatherData = weatherData.filter(city => city.city_name === cityName);
-  let userWeatherChoice = filteredWeatherData[0].data.map(forecast => new Forecast(forecast));
-  response.send(userWeatherChoice);
+  let cityNameRequested = request.query.searchQuery;
 
+  let latRequested = request.query.lat;
+  let lonRequested = request.query.lon;
+
+  let cityFound = weatherData.find(obj => obj.city_name.toLowerCase() === cityNameRequested.toLowerCase());
+  let forecastArray = [];
+
+  if (cityFound) {
+    cityFound.data.forEach(obj => forecastArray.push(new Forecast(`Low of ${obj.low_temp}, high of ${obj.high_temp} with ${obj.weather.description.toLowerCase()}`, obj.datetime)));
+
+    response.send(forecastArray);
+  } else {
+    response.status(400).send('No weather data exists for this city');
+  }
 });
 
-//if i am going to catch all other requests.  that catch all MUST be the LAST ROUTE
 app.get('/*', (request, response) => {
-  response.status(404).send('Oh No!  Something went wrong');
+  response.status(404).send('Path does not exists');
 });
 
-
-
-//LISTENING FOR ROUTES >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-// tell our server to start listening for requests
-app.listen(PORT, () => console.log(`listening on port ${PORT}`))
+app.listen(PORT, () => console.log(`listening on port ${PORT}`));
