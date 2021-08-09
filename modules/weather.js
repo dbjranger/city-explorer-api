@@ -1,25 +1,25 @@
 const axios = require('axios');
 
-async function getWeather(request, response){
-  
-  let latRequested = request.query.lat;
-  let lonRequested = request.query.lon;
-  
-  let weatherRaw = await axios.get(`https://api.weatherbit.io/v2.0/forecast/daily?key=${process.env.WEATHER_API_KEY}&lat=${latRequested}&lon=${lonRequested}&days=3`);
+class Forecast {
+  constructor(day) {
+    this.description = `Low of ${day.low_temp}, high of ${day.high_temp} with ${day.weather.description.toLowerCase()}`;
+    this.date = day.datetime;
+  }
+}
 
-  if (weatherRaw.data) {
-    let forecast = weatherRaw.data.data.map(obj => new Forecast(obj));
+async function getWeather(request, response){ 
+  let lat = request.query.lat;
+  let lon = request.query.lon;
+  let weather = await axios.get(`https://api.weatherbit.io/v2.0/forecast/daily?key=${process.env.WEATHER_API_KEY}&lat=${lat}&lon=${lon}&days=3`);
+
+  if (weather.data) {
+    let forecast = weather.data.data.map(day => new Forecast(day));
     response.send(forecast);
   } else {
     response.status(400).send('No weather data exists for this city');
   }
 }
 
-class Forecast {
-  constructor(obj) {
-    this.description = `Low of ${obj.low_temp}, high of ${obj.high_temp} with ${obj.weather.description.toLowerCase()}`;
-    this.date = obj.datetime;
-  }
-}
+
 
 module.exports = getWeather;
