@@ -2,10 +2,15 @@
 
 let cache = require('./cache.js');
 
-module.exports = getWeather;
+class Weather {
+  constructor(day) {
+    this.forecast = day.weather.description;
+    this.time = day.datetime;
+  }
+}
 
-function getWeather(latitude, longitude) {
-  const key = 'weather-' + latitude + longitude;
+function getWeather(lat, lon) {
+  const key = 'weather-' + lat + lon;
   const url = `http://api.weatherbit.io/v2.0/forecast/daily/?key=${WEATHER_API_KEY}&lang=en&lat=${lat}&lon=${lon}&days=5`;
 
   if (cache[key] && (Date.now() - cache[key].timestamp < 50000)) {
@@ -32,9 +37,6 @@ function parseWeather(weatherData) {
   }
 }
 
-class Weather {
-  constructor(day) {
-    this.forecast = day.weather.description;
-    this.time = day.datetime;
-  }
-}
+
+
+module.exports = getWeather;
