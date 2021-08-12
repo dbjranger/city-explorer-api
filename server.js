@@ -1,35 +1,40 @@
 'use strict';
 
-console.log('Hello world');
+let cache = require('./modules/cache.js');
 
-//Express App
-const express = require('express');
-const app = express();
+module.exports = getWeather;
 
-//Cors so data can be read across files/folders
-const cors = require('cors');
-app.use(cors());
+function getWeather(latitude, longitude) {
+  const key = 'weather-' + latitude + longitude;
+  const url = `http://api.weatherbit.io/v2.0/forecast/daily/?key=${WEATHER_API_KEY}&lang=en&lat=${lat}&lon=${lon}&days=5`;
 
-//Require an ENV file for API Keys
-require('dotenv').config();
-const axios = require('axios');
-const PORT = process.env.PORT;
+  if (cache[key] && (Date.now() - cache[key].timestamp < 50000)) {
+    console.log('Cache hit');
+  } else {
+    console.log('Cache miss');
+    cache[key] = {};
+    cache[key].timestamp = Date.now();
+    cache[key].data = axios.get(url)
+    .then(response => parseWeather(response.body));
+  }
+  
+  return cache[key].data;
+}
 
+function parseWeather(weatherData) {
+  try {
+    const weatherSummaries = weatherData.data.map(day => {
+      return new Weather(day);
+    });
+    return Promise.resolve(weatherSummaries);
+  } catch (e) {
+    return Promise.reject(e);
+  }
+}
 
-//Proof of life on main URL
-app.get('/', (request, response) => {
-  response.send('Hello, from the server!');
-});
-
-// Weather, Movies, Catch All, and Listener
-const weather = require('./modules/weather.js');
-app.get('/weather', weather);
-
-const movies = require('./modules/movies.js');
-app.get('/movies', movies);
-
-app.get('/*', (request, response) => {
-  response.status(404).send('Path does not exists');
-});
-
-app.listen(PORT, () => console.log(`listening on port ${PORT}`));
+class Weather {
+  constructor(day) {
+    this.forecast = day.weather.description;
+    this.time = day.datetime;
+  }
+}
